@@ -3,11 +3,11 @@ set -e
 
 echo "=== Building Flappy Bird 3D Android APK ==="
 
-PROJECT_DIR="/home/khushant/Flappy Bird"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SDK_DIR="$PROJECT_DIR/android-sdk"
 BUILD_TOOLS="$SDK_DIR/build-tools/34.0.0"
 PLATFORM="$SDK_DIR/platforms/android-34/android.jar"
-JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
 
 AAPT2="$BUILD_TOOLS/aapt2"
 D8="$BUILD_TOOLS/d8"

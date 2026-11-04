@@ -1,0 +1,10 @@
+# Android SDK & Build tools
+android-sdk/
+gradle-8.7/
+build_output/
+*.idsig
+
+# System & temporary files
+.DS_Store
+Thumbs.db
+*.log

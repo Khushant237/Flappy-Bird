@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f0e17">
+    <meta name="description" content="Flappy Bird 3D - Anime Comic Arcade">
+    <title>Flappy Bird 3D</title>
+    <!-- Comic/Anime fonts: Bangers (title) + Fredoka (UI) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 3D WebGL Canvas Container -->
+    <div id="game-canvas-container"></div>
+
+    <!-- Screen Flash Overlay (for score / hit effects) -->
+    <div id="screen-flash"></div>
+
+    <!-- FPS Counter -->
+    <div id="fps-counter" style="display: none;">60 FPS</div>
+
+    <!-- Bottom Left Subtle Author Badge -->
+    <div id="bottom-watermark" class="bottom-author-badge">★ Made By Khushant</div>
+
+    <!-- Weather / Time HUD badge -->
+    <div id="weather-label" class="weather-label hidden">🌤 DAY</div>
+
+    <!-- HUD Overlay -->
+    <div id="hud-overlay">
+        <div class="hud-left">
+            <button id="hud-btn-pause" class="icon-btn ui-interactive" title="Pause Game" style="display: none;">
+                <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+        </div>
+
+        <div class="hud-center">
+            <div id="hud-score">0</div>
+            <div id="hud-difficulty-badge" class="difficulty-badge diff-normal">NORMAL</div>
+        </div>
+
+        <div class="hud-right">
+            <button id="hud-btn-settings" class="icon-btn ui-interactive" title="Open Settings">
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Score Popup Word (NICE! / GREAT! / PERFECT!) -->
+    <div id="score-popup" class="score-popup hidden"></div>
+
+    <!-- Start / Title Screen -->
+    <div id="start-screen" class="overlay-screen">
+        <div class="title-banner">
+            <h1 class="game-title">FLAPPY<span>3D</span></h1>
+            <p class="subtitle">✦ COMIC ANIME EDITION ✦</p>
+        </div>
+
+        <div class="tap-hint">
+            <svg class="tap-icon" viewBox="0 0 24 24"><path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.02-.24-.02-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.43 1.06.43h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg>
+            <span>TAP OR PRESS SPACE</span>
+        </div>
+
+        <div class="start-info-card">
+            <div class="info-item">
+                <span>BEST SCORE</span>
+                <span id="start-highscore" class="info-val">0</span>
+            </div>
+            <div class="info-divider"></div>
+            <div class="info-item">
+                <span>DIFFICULTY</span>
+                <span id="start-difficulty" class="info-val">NORMAL</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pause Screen -->
+    <div id="pause-screen" class="overlay-screen hidden">
+        <div class="game-over-card">
+            <h2 class="game-over-title" style="color: #2DE2E6;">⏸ PAUSED</h2>
+            <div style="margin: 16px 0; font-size: 1rem; color: #b0bec5;">Take a breather!</div>
+            <div class="card-actions" style="flex-direction: column;">
+                <button id="btn-resume" class="btn-primary">▶ RESUME</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="overlay-screen hidden">
+        <div class="game-over-card">
+            <h2 class="game-over-title">GAME OVER!</h2>
+            <div id="gameover-badge" class="new-best-badge hidden">★ NEW HIGH SCORE! ★</div>
+
+            <div class="score-stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">SCORE</div>
+                    <div id="gameover-score" class="stat-num">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">BEST</div>
+                    <div id="gameover-highscore" class="stat-num">0</div>
+                </div>
+            </div>
+
+            <div class="medal-section">
+                <div class="stat-label" style="margin-bottom: 6px;">MEDAL</div>
+                <div id="gameover-medal" class="medal-chip medal-none">NONE</div>
+            </div>
+
+            <div class="card-actions">
+                <button id="btn-restart" class="btn-primary">PLAY AGAIN</button>
+                <button id="btn-gameover-settings" class="btn-secondary">⚙</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal">
+        <div class="settings-card">
+            <div class="settings-header">
+                <div class="settings-title-container">
+                    <h2>⚙ SETTINGS</h2>
+                    <span class="settings-author-badge">★ Made By Khushant</span>
+                </div>
+                <button id="btn-close-settings" class="close-btn" title="Close Settings">&times;</button>
+            </div>
+
+            <div class="settings-body">
+                <!-- Group 1: Gameplay -->
+                <div class="setting-group-title">🎮 Gameplay</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Difficulty</span>
+                        <span class="setting-desc">Speed, gap size &amp; physics</span>
+                    </div>
+                    <select id="setting-difficulty" class="custom-select">
+                        <option value="easy">Easy (Relaxed)</option>
+                        <option value="normal">Normal (Classic)</option>
+                        <option value="hard">Hard (Fast)</option>
+                        <option value="insane">Insane (Moving)</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Tap Force</span>
+                        <span class="setting-desc">Jump bounce sensitivity</span>
+                    </div>
+                    <input id="setting-sensitivity" type="range" class="range-slider" min="70" max="130" value="100">
+                </div>
+
+                <!-- Group 2: Audio -->
+                <div class="setting-group-title">🎵 Audio &amp; Sound</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Music</span>
+                        <span class="setting-desc">Retro synthwave melody</span>
+                    </div>
+                    <label class="switch">
+                        <input id="setting-music" type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Music Volume</span>
+                    </div>
+                    <input id="setting-music-vol" type="range" class="range-slider" min="0" max="100" value="60">
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Sound Effects</span>
+                        <span class="setting-desc">Flap, chimes &amp; collisions</span>
+                    </div>
+                    <label class="switch">
+                        <input id="setting-sfx" type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">SFX Volume</span>
+                    </div>
+                    <input id="setting-sfx-vol" type="range" class="range-slider" min="0" max="100" value="80">
+                </div>
+
+                <!-- Group 3: Customization -->
+                <div class="setting-group-title">🎨 Customization</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Bird Skin</span>
+                        <span class="setting-desc">Anime-style 3D bird</span>
+                    </div>
+                    <select id="setting-skin" class="custom-select">
+                        <option value="classic">Classic Goldie</option>
+                        <option value="cyber">Cyber Neon</option>
+                        <option value="phoenix">Crimson Phoenix</option>
+                        <option value="shadow">Shadow Ninja</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Pipe Style</span>
+                        <span class="setting-desc">Toon obstacle theme</span>
+                    </div>
+                    <select id="setting-pipe" class="custom-select">
+                        <option value="classic">Classic Emerald</option>
+                        <option value="brass">Steampunk Brass</option>
+                        <option value="cyber">Cyberpunk Glow</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Sky &amp; Atmosphere</span>
+                        <span class="setting-desc">Time of day &amp; weather</span>
+                    </div>
+                    <select id="setting-theme" class="custom-select">
+                        <option value="dynamic">Dynamic Cycle (Auto)</option>
+                        <option value="day">Sunny Afternoon</option>
+                        <option value="sunset">Golden Sunset</option>
+                        <option value="night">Midnight Stars</option>
+                        <option value="rain">Thunderstorm &amp; Rain</option>
+                    </select>
+                </div>
+
+                <!-- Group 4: Visuals -->
+                <div class="setting-group-title">✨ Visuals &amp; Performance</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Quality Preset</span>
+                        <span class="setting-desc">Shadows &amp; particles</span>
+                    </div>
+                    <select id="setting-graphics" class="custom-select">
+                        <option value="high">High (Shadows + FX)</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low (Battery Saver)</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Show FPS</span>
+                        <span class="setting-desc">Display frame counter</span>
+                    </div>
+                    <label class="switch">
+                        <input id="setting-fps" type="checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <!-- Group 5: Data -->
+                <div class="setting-group-title">🗑 Data</div>
+                <div class="setting-item" style="padding-top: 4px;">
+                    <button id="btn-reset-scores" class="btn-danger">RESET HIGH SCORES</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/three.min.js"></script>
+    <script src="js/textures.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const game = new FlappyGame();
+            window.flappyGame = game;
+            window.uiManager = new UIManager(game);
+        });
+    </script>
+</body>
+</html>

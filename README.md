@@ -49,13 +49,13 @@ Tap the **⚙ Gear Button** anytime to open the settings:
 
 The signed, release-ready APK is generated at:
 ```
-/home/khushant/Flappy Bird/FlappyBird3D.apk
+Khushant237/Flappy-Bird/FlappyBird3D.apk
 ```
 
 ### Method 1: Install via USB / ADB
 If your phone is connected to your computer with USB Debugging enabled:
 ```bash
-adb install "/home/khushant/Flappy Bird/FlappyBird3D.apk"
+adb install "APK/File/Path/FlappyBird3D.apk"
 ```
 
 ### Method 2: Transfer to Phone
@@ -70,7 +70,7 @@ adb install "/home/khushant/Flappy Bird/FlappyBird3D.apk"
 
 You can preview and play the game immediately on your computer:
 ```bash
-cd "/home/khushant/Flappy Bird"
+cd "/Folder/Path/Flappy Bird"
 ./play_in_browser.sh
 ```
 Then open [http://localhost:8080](http://localhost:8080) in your browser (Chrome, Firefox, Edge).
@@ -83,7 +83,7 @@ Then open [http://localhost:8080](http://localhost:8080) in your browser (Chrome
 
 If you make any changes to the game files in `game/`, you can rebuild the APK in seconds:
 ```bash
-cd "/home/khushant/Flappy Bird"
+cd "/Folder/Path/Flappy Bird"
 ./build_apk.sh
 ```
 This runs the standalone Android SDK build chain (`aapt2` -> `javac` -> `d8` -> `zipalign` -> `apksigner`) and updates `FlappyBird3D.apk`.

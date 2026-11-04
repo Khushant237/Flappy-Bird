@@ -1,6 +1,9 @@
-# System & temporary files
-android-sdk/.temp/
+# Android SDK & Build tools (bulky binary tools - should not be in git)
+android-sdk/
+gradle-8.7/
 *.idsig
+
+# System & temporary files
 .DS_Store
 Thumbs.db
 *.log

@@ -62,28 +62,26 @@ const ModelFactory = {
         const sc = skinColors[skin] || skinColors.classic;
 
         // 1. BODY — toon material with painted texture, smooth sphere
-        const bodyGeo = new THREE.SphereGeometry(0.8, 32, 24);
+        const bodyGeo = new THREE.SphereGeometry(0.8, 18, 14);
         const bodyMat = new THREE.MeshToonMaterial({
             map: bodyTex,
             gradientMap: TOON_GRADIENT,
             color: sc.body,
         });
         const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-        bodyMesh.castShadow = true;
         addOutline(bodyMesh, 1.09, 0x1a1a2e);
         birdGroup.add(bodyMesh);
 
         // 2. BELLY — lighter oval, clean toon color
-        const bellyGeo = new THREE.SphereGeometry(0.52, 24, 18);
+        const bellyGeo = new THREE.SphereGeometry(0.52, 14, 10);
         const bellyMat = toonMat(sc.belly);
         const bellyMesh = new THREE.Mesh(bellyGeo, bellyMat);
         bellyMesh.scale.set(1.0, 0.82, 0.88);
         bellyMesh.position.set(0.14, -0.22, 0);
-        bellyMesh.castShadow = true;
         birdGroup.add(bellyMesh);
 
         // 3. EYES — large, expressive anime eyes
-        const eyeGeo  = new THREE.SphereGeometry(0.33, 24, 24);
+        const eyeGeo  = new THREE.SphereGeometry(0.33, 14, 12);
         const eyeMat  = new THREE.MeshToonMaterial({ map: eyeTex, gradientMap: TOON_GRADIENT });
 
         const leftEye  = new THREE.Mesh(eyeGeo, eyeMat);
@@ -97,7 +95,7 @@ const ModelFactory = {
         birdGroup.add(rightEye);
 
         // Eye outline rings
-        const eyeRingGeo = new THREE.TorusGeometry(0.34, 0.07, 8, 24);
+        const eyeRingGeo = new THREE.TorusGeometry(0.34, 0.07, 6, 14);
         const eyeRingMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
         [leftEye, rightEye].forEach(eye => {
             const ring = new THREE.Mesh(eyeRingGeo, eyeRingMat);
@@ -169,11 +167,10 @@ const ModelFactory = {
 
         const leftWingPivot  = new THREE.Group();
         leftWingPivot.position.set(-0.05, 0.05, 0.72);
-        const wGeo = new THREE.SphereGeometry(0.42, 16, 10);
+        const wGeo = new THREE.SphereGeometry(0.42, 12, 8);
         wGeo.scale(1.4, 0.3, 1.1);
         wGeo.translate(-0.1, 0, 0.3);
         const lWingMesh = new THREE.Mesh(wGeo, wingMat);
-        lWingMesh.castShadow = true;
         addOutline(lWingMesh, 1.1, 0x1a1a2e);
         leftWingPivot.add(lWingMesh);
         birdGroup.add(leftWingPivot);
@@ -254,17 +251,15 @@ const ModelFactory = {
         const makeHalf = (flip) => {
             const half = new THREE.Group();
 
-            const bodyGeo = new THREE.CylinderGeometry(pipeR, pipeR, pipeL, 24);
+            const bodyGeo = new THREE.CylinderGeometry(pipeR, pipeR, pipeL, 12);
             const body = new THREE.Mesh(bodyGeo, pipeMat);
             body.position.y = (pipeL / 2 + capH) * flip;
-            body.castShadow = true;
             addOutline(body, 1.05, 0x1a1a2e);
             half.add(body);
 
-            const capGeo = new THREE.CylinderGeometry(capR, capR, capH, 24);
+            const capGeo = new THREE.CylinderGeometry(capR, capR, capH, 12);
             const cap  = new THREE.Mesh(capGeo, capMat);
             cap.position.y = (capH / 2) * flip;
-            cap.castShadow = true;
             addOutline(cap, 1.06, 0x1a1a2e);
             half.add(cap);
 
@@ -333,24 +328,23 @@ const ModelFactory = {
         return g;
     },
 
-    // ─── ANIME TOON CLOUDS ──────────────────────────────────────────────────────
+    // ─── ANIME TOON CLOUDS (Optimized for Android TV) ──────────────────────────
     createCloud() {
         const g = new THREE.Group();
         const mat = new THREE.MeshToonMaterial({ color: 0xFFFFFF, gradientMap: TOON_GRADIENT });
 
-        const count = 4 + Math.floor(Math.random() * 4);
+        const count = 3;
         for (let i = 0; i < count; i++) {
-            const r = 0.9 + Math.random() * 1.0;
-            const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), mat);
+            const r = 0.9 + Math.random() * 0.9;
+            const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 6), mat);
             mesh.position.set(
-                (i - count / 2) * 1.2 + (Math.random() - 0.5) * 0.5,
-                (Math.random() - 0.5) * 0.65,
-                (Math.random() - 0.5) * 0.9,
+                (i - 1) * 1.3 + (Math.random() - 0.5) * 0.4,
+                (Math.random() - 0.5) * 0.5,
+                (Math.random() - 0.5) * 0.6,
             );
-            addOutline(mesh, 1.06, 0x1a1a2e);
             g.add(mesh);
         }
-        const sc = 0.85 + Math.random() * 0.9;
+        const sc = 0.85 + Math.random() * 0.8;
         g.scale.set(sc, sc * 0.7, sc);
 
         g.userData = {
@@ -369,7 +363,7 @@ const ModelFactory = {
         const g = new THREE.Group();
 
         const sunMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(1.75, 24, 24),
+            new THREE.SphereGeometry(1.75, 14, 12),
             new THREE.MeshBasicMaterial({ color: 0xFFF176 })
         );
         g.add(sunMesh);
@@ -403,7 +397,7 @@ const ModelFactory = {
         const g = new THREE.Group();
 
         const moonMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(1.45, 24, 24),
+            new THREE.SphereGeometry(1.45, 14, 12),
             new THREE.MeshBasicMaterial({ map: TextureGenerator.getMoonTexture() })
         );
         g.add(moonMesh);
@@ -428,9 +422,15 @@ const ModelFactory = {
         return g;
     },
 
-    // ─── RAIN SYSTEM ────────────────────────────────────────────────────────────
-    createRainSystem(dropCount = 350) {
+    // ─── RAIN SYSTEM (Ultra Lightweight TV Edition) ────────────────────────────
+    createRainSystem(dropCount = 35) {
         const g = new THREE.Group();
+
+        if (dropCount <= 0) {
+            g.userData = { intensity: 0, update() {} };
+            g.visible = false;
+            return g;
+        }
 
         const dropGeo = new THREE.BufferGeometry();
         const pos  = new Float32Array(dropCount * 3);
@@ -453,7 +453,7 @@ const ModelFactory = {
         const drops = new THREE.Points(dropGeo, dropMat);
         g.add(drops);
 
-        const rCount = 30;
+        const rCount = 8;
         const rGeo = new THREE.BufferGeometry();
         const rPos = new Float32Array(rCount * 3);
         const rSz  = new Float32Array(rCount);
@@ -481,7 +481,7 @@ const ModelFactory = {
                     pa[i*3]   += vels[i*3]   * delta;
                     pa[i*3+1] += vels[i*3+1] * delta;
                     if (pa[i*3+1] <= groundY) {
-                        if (Math.random() < 0.2) {
+                        if (Math.random() < 0.25) {
                             rPos[ri*3] = pa[i*3]; rPos[ri*3+1] = groundY + 0.05; rPos[ri*3+2] = pa[i*3+2];
                             rLife[ri] = 0.3; rSz[ri] = 0.15;
                             ri = (ri + 1) % rCount;
@@ -509,7 +509,7 @@ const ModelFactory = {
     createSpeedLines() {
         const g = new THREE.Group();
         const lines = [];
-        const lineCount = 32;
+        const lineCount = 14;
 
         for (let i = 0; i < lineCount; i++) {
             const angle  = (i / lineCount) * Math.PI * 2;
@@ -535,8 +535,16 @@ const ModelFactory = {
         return g;
     },
 
-    // ─── STAR PARTICLE EMITTER ──────────────────────────────────────────────────
-    createParticleEmitter(maxP = 120) {
+    // ─── STAR PARTICLE EMITTER (Ultra Lightweight TV Edition) ───────────────────
+    createParticleEmitter(maxP = 30) {
+        if (maxP <= 0) {
+            return {
+                userData: {
+                    emit() {},
+                    update() {}
+                }
+            };
+        }
         const geo = new THREE.BufferGeometry();
         const positions = new Float32Array(maxP * 3);
         const colors    = new Float32Array(maxP * 3);

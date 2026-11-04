@@ -15,8 +15,15 @@ class FlappyGame {
         this.birdSkin = localStorage.getItem('fb_bird_skin') || 'classic';
         this.pipeStyle = localStorage.getItem('fb_pipe_style') || 'classic';
         this.theme = localStorage.getItem('fb_theme') || 'dynamic';
-        this.graphicsQuality = localStorage.getItem('fb_graphics') || 'high';
+        this.graphicsQuality = localStorage.getItem('fb_graphics') || 'medium';
         this.sensitivity = parseFloat(localStorage.getItem('fb_sensitivity') || '1.0');
+
+        // Pre-allocated THREE objects to eliminate GC stutter during per-frame loops
+        this._skyColor = new THREE.Color();
+        this._fogColor = new THREE.Color();
+        this._lightColor = new THREE.Color();
+        this._stormSkyColor = new THREE.Color(0x212b36);
+        this._stormFogColor = new THREE.Color(0x37474f);
 
         // Dynamic Time of Day & Weather System
         // timeOfDay: 0.0 (Dawn) -> 0.35 (Noon/Day) -> 0.65 (Sunset) -> 0.85 (Night) -> 1.0 (Dawn)
@@ -144,18 +151,22 @@ class FlappyGame {
         this.camera.lookAt(this.baseCamX, 0.0, 0);
 
         this.renderer = new THREE.WebGLRenderer({
-            antialias: this.graphicsQuality !== 'low',
-            powerPreference: 'high-performance'
+            antialias: false, // Essential for Android TV 60 FPS
+            powerPreference: 'high-performance',
+            precision: 'mediump',
+            stencil: false,
+            depth: true
         });
         this.renderer.setSize(width, height);
-        // Clamp pixel ratio: max 1.5 on mobile to eliminate GPU memory stalls & frame drops
-        const maxDPR = this.graphicsQuality === 'high' ? 1.5 : 1.0;
+
+        // Clamp pixel ratio for TV: prevents fill-rate saturation on 1080p/4K TVs
+        let maxDPR = 0.85;
+        if (this.graphicsQuality === 'high') maxDPR = 1.0;
+        else if (this.graphicsQuality === 'low') maxDPR = 0.7;
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDPR));
 
-        if (this.graphicsQuality === 'high') {
-            this.renderer.shadowMap.enabled = true;
-            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        }
+        // Always disable shadow map on TV for butter-smooth 60 FPS
+        this.renderer.shadowMap.enabled = false;
 
         this.container.appendChild(this.renderer.domElement);
         this.updateCameraLayout();
@@ -166,27 +177,16 @@ class FlappyGame {
     }
 
     initWorld() {
-        // 1. Lighting Setup
-        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+        // 1. Lighting Setup (Bright & Crisp Anime Toon Lighting)
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         this.scene.add(this.ambientLight);
 
-        this.hemiLight = new THREE.HemisphereLight(0x90caf9, 0x3e2723, 0.65);
+        this.hemiLight = new THREE.HemisphereLight(0x90caf9, 0x3e2723, 0.7);
         this.scene.add(this.hemiLight);
 
-        this.dirLight = new THREE.DirectionalLight(0xfff9c4, 1.15);
+        this.dirLight = new THREE.DirectionalLight(0xfff9c4, 1.2);
         this.dirLight.position.set(6, 12, 8);
-        if (this.graphicsQuality === 'high') {
-            this.dirLight.castShadow = true;
-            // 512x512 soft shadow map: perfectly crisp for toon meshes, eliminates mobile GPU lag
-            this.dirLight.shadow.mapSize.width = 512;
-            this.dirLight.shadow.mapSize.height = 512;
-            this.dirLight.shadow.camera.near = 0.5;
-            this.dirLight.shadow.camera.far = 30;
-            this.dirLight.shadow.camera.left = -10;
-            this.dirLight.shadow.camera.right = 10;
-            this.dirLight.shadow.camera.top = 10;
-            this.dirLight.shadow.camera.bottom = -10;
-        }
+        this.dirLight.castShadow = false; // TV optimization: zero dynamic shadow overhead
         this.scene.add(this.dirLight);
 
         // 2. Celestial 3D Sun & Moon
@@ -196,8 +196,9 @@ class FlappyGame {
         this.moon = ModelFactory.createMoon();
         this.scene.add(this.moon);
 
-        // 3. 3D Rain Weather System
-        this.rainSystem = ModelFactory.createRainSystem(this.graphicsQuality === 'high' ? 400 : 200);
+        // 3. 3D Rain Weather System (Lightweight TV Edition)
+        const rainCount = this.graphicsQuality === 'high' ? 35 : (this.graphicsQuality === 'medium' ? 20 : 0);
+        this.rainSystem = ModelFactory.createRainSystem(rainCount);
         this.scene.add(this.rainSystem);
 
         // 4. Ground
@@ -205,8 +206,8 @@ class FlappyGame {
         this.ground.position.set(0, this.groundY, 0);
         this.scene.add(this.ground);
 
-        // 5. Clouds
-        for (let i = 0; i < 7; i++) {
+        // 5. Clouds (TV Optimized: 3 clouds, no heavy duplicated mesh shells)
+        for (let i = 0; i < 3; i++) {
             const cloud = ModelFactory.createCloud();
             cloud.position.set(
                 (Math.random() - 0.5) * 35,
@@ -222,9 +223,11 @@ class FlappyGame {
         this.bird.position.set(this.birdX, this.birdY, 0);
         this.scene.add(this.bird);
 
-        // 7. Particle System
-        this.particles = ModelFactory.createParticleEmitter(150);
-        this.scene.add(this.particles);
+        // 7. Particle System (TV Optimized pool)
+        this.particles = ModelFactory.createParticleEmitter(this.graphicsQuality === 'low' ? 0 : 30);
+        if (this.particles && this.particles.isPoints) {
+            this.scene.add(this.particles);
+        }
 
         this.resetPipes();
         this.updateSkyAndWeather(0);
@@ -331,19 +334,17 @@ class FlappyGame {
         this.birdVelocityY = this.diffParams.jumpForce * this.sensitivity;
         window.soundManager.playFlap();
 
-        if (this.particles && this.graphicsQuality !== 'low') {
-            for (let i = 0; i < 4; i++) {
-                this.particles.userData.emit(
-                    this.bird.position.x - 0.6,
-                    this.bird.position.y - 0.2,
-                    (Math.random() - 0.5) * 0.4,
-                    -1.5 - Math.random() * 2,
-                    (Math.random() - 0.5) * 2,
-                    (Math.random() - 0.5) * 1.5,
-                    1.0, 0.9, 0.3,
-                    0.5, 0.35
-                );
-            }
+        if (this.particles && this.graphicsQuality !== 'low' && this.particles.userData && this.particles.userData.emit) {
+            this.particles.userData.emit(
+                this.bird.position.x - 0.5,
+                this.bird.position.y - 0.15,
+                0,
+                -1.5,
+                (Math.random() - 0.5) * 0.8,
+                0,
+                1.0, 0.9, 0.3,
+                0.3, 0.25
+            );
         }
     }
 
@@ -404,18 +405,18 @@ class FlappyGame {
             }
         }
 
-        if (this.particles) {
-            for (let i = 0; i < 12; i++) {
-                const angle = (i / 12) * Math.PI * 2;
+        if (this.particles && this.graphicsQuality !== 'low' && this.particles.userData && this.particles.userData.emit) {
+            for (let i = 0; i < 4; i++) {
+                const angle = (i / 4) * Math.PI * 2;
                 this.particles.userData.emit(
                     this.bird.position.x + 0.2,
                     this.bird.position.y,
                     0,
-                    Math.cos(angle) * 3,
-                    Math.sin(angle) * 3,
-                    (Math.random() - 0.5) * 2,
+                    Math.cos(angle) * 2.5,
+                    Math.sin(angle) * 2.5,
+                    0,
                     0.2, 0.9, 1.0,
-                    0.6, 0.45
+                    0.4, 0.35
                 );
             }
         }
@@ -442,19 +443,19 @@ class FlappyGame {
         this.shakeIntensity = 0.28;
         this.triggerFlash('hit');
 
-        if (this.particles) {
-            for (let i = 0; i < 35; i++) {
-                const spd = 2 + Math.random() * 5;
+        if (this.particles && this.particles.userData && this.particles.userData.emit) {
+            for (let i = 0; i < 10; i++) {
+                const spd = 2 + Math.random() * 3.5;
                 const angle = Math.random() * Math.PI * 2;
                 this.particles.userData.emit(
                     this.bird.position.x,
                     this.bird.position.y,
-                    (Math.random() - 0.5) * 0.5,
+                    (Math.random() - 0.5) * 0.2,
                     Math.cos(angle) * spd,
                     Math.sin(angle) * spd,
-                    (Math.random() - 0.5) * 3,
+                    (Math.random() - 0.5) * 1.5,
                     1.0, 0.7 + Math.random() * 0.3, 0.1,
-                    0.8, 0.5
+                    0.6, 0.4
                 );
             }
         }
@@ -519,14 +520,10 @@ class FlappyGame {
             this.rainSystem.userData.update(delta, this.groundY);
         }
 
-        // 2. Compute Colors across the 4 Day Phases
-        // Phase 1: Dawn (0.00 - 0.20)
-        // Phase 2: Afternoon / Sunny Day (0.20 - 0.55)
-        // Phase 3: Evening / Golden Sunset (0.55 - 0.75)
-        // Phase 4: Night (0.75 - 1.00)
-        let skyColor = new THREE.Color();
-        let fogColor = new THREE.Color();
-        let lightColor = new THREE.Color();
+        // 2. Compute Colors across the 4 Day Phases (Zero allocation via cached THREE.Colors)
+        const skyColor = this._skyColor;
+        const fogColor = this._fogColor;
+        const lightColor = this._lightColor;
         let lightIntensity = 1.0;
 
         const t = this.timeOfDay;
@@ -561,9 +558,8 @@ class FlappyGame {
 
         // Apply storm cloud darkening if raining
         if (this.rainIntensity > 0.05) {
-            const stormColor = new THREE.Color(0x212b36);
-            skyColor.lerp(stormColor, this.rainIntensity * 0.65);
-            fogColor.lerp(new THREE.Color(0x37474f), this.rainIntensity * 0.6);
+            skyColor.lerp(this._stormSkyColor, this.rainIntensity * 0.65);
+            fogColor.lerp(this._stormFogColor, this.rainIntensity * 0.6);
             lightIntensity *= (1.0 - this.rainIntensity * 0.55);
         }
 
@@ -647,9 +643,14 @@ class FlappyGame {
     setGraphicsQuality(quality) {
         this.graphicsQuality = quality;
         localStorage.setItem('fb_graphics', quality);
-        this.renderer.antialias = quality !== 'low';
-        this.renderer.shadowMap.enabled = quality === 'high';
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality === 'high' ? 2.0 : 1.5));
+        if (this.renderer) {
+            let dpr = 0.85;
+            if (quality === 'high') dpr = 1.0;
+            else if (quality === 'low') dpr = 0.7;
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, dpr));
+            this.renderer.shadowMap.enabled = false;
+            this.updateCameraLayout();
+        }
     }
 
     setSensitivity(val) {

@@ -5,7 +5,10 @@ echo "=== Building Flappy Bird 3D Android TV APK ==="
 
 TV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$TV_DIR/.." && pwd)"
-SDK_DIR="$ROOT_DIR/android-sdk"
+SDK_DIR="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/home/khushant/android-sdk}}"
+if [ ! -d "$SDK_DIR" ]; then
+    SDK_DIR="$ROOT_DIR/android-sdk"
+fi
 BUILD_TOOLS="$SDK_DIR/build-tools/34.0.0"
 PLATFORM="$SDK_DIR/platforms/android-34/android.jar"
 JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
